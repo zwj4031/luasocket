@@ -1,0 +1,41 @@
+name: Build LuaSocket DLL for Windows
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-2022
+    strategy:
+      matrix:
+        arch: [Win32, x64]
+    env:
+      BUILD_TYPE: Release
+
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
+
+    - name: Set up MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{ matrix.arch }}
+
+    - name: Set up CMake
+      uses: lukka/run-cmake@v3
+
+    - name: Configure CMake
+      run: cmake -S . -B build -A ${{ matrix.arch }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+    - name: Build DLL
+      run: cmake --build build --config ${{ env.BUILD_TYPE }}
+
+    - name: Upload DLL module
+      uses: actions/upload-artifact@v4
+      with:
+        name: luasocket-dll-${{ matrix.arch }}
+        path: |
+          build/${{ env.BUILD_TYPE }}/*.dll
+          build/${{ env.BUILD_TYPE }}/*.pdb
